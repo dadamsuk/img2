@@ -1,12 +1,17 @@
+import { getConfig } from "./config";
+
 const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
-const MODEL = "anthropic/claude-sonnet-4-5-20250929";
 
 function getApiKey(): string {
-  const key = process.env.OPENROUTER_API_KEY;
+  const key = getConfig().openrouter.apiKey;
   if (!key || key === "your-openrouter-api-key-here") {
-    throw new Error("OPENROUTER_API_KEY not configured");
+    throw new Error("openrouter.apiKey not configured in config.json");
   }
   return key;
+}
+
+function getModel(): string {
+  return getConfig().openrouter.defaultModel;
 }
 
 interface EvalResult {
@@ -43,7 +48,7 @@ Is the guesser's answer correct?`;
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: MODEL,
+      model: getModel(),
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
@@ -78,7 +83,7 @@ export async function generateClues(
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: MODEL,
+      model: getModel(),
       messages: [
         {
           role: "system",

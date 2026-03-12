@@ -1,10 +1,15 @@
 import sharp from "sharp";
 import path from "path";
 import fs from "fs/promises";
+import { getConfig } from "./config";
 
 const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads");
 const MAX_WIDTH = 2000;
 const THUMB_WIDTH = 400;
+
+export function getMaxUploadBytes(): number {
+  return getConfig().uploads.maxFileSizeMB * 1024 * 1024;
+}
 
 export interface ProcessedImage {
   url: string;

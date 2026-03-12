@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { processImage, ensureUploadDir } from "@/lib/image";
+import { processImage, ensureUploadDir, getMaxUploadBytes } from "@/lib/image";
 
 export async function POST(req: NextRequest) {
   const session = await auth();
@@ -21,6 +21,15 @@ export async function POST(req: NextRequest) {
 
   if (!groupId || !puzzleId) {
     return NextResponse.json({ error: "groupId and puzzleId required" }, { status: 400 });
+  }
+
+  const maxBytes = getMaxUploadBytes();
+  if (file.size > maxBytes) {
+    const maxMB = (maxBytes / (1024 * 1024)).toFixed(0);
+    return NextResponse.json(
+      { error: `File too large. Maximum size is ${maxMB}MB` },
+      { status: 413 }
+    );
   }
 
   const buffer = Buffer.from(await file.arrayBuffer());
