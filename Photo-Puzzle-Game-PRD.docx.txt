@@ -1,0 +1,1284 @@
+Photo Puzzle Game — PRD v1.0
+
+PRODUCT REQUIREMENTS DOCUMENT
+
+Photo Puzzle Game
+A multiplayer, turn-based photo guessing game
+
+Version 1.0 · March 2026
+Status: Ready for Development
+
+Page 1 of 22
+
+Photo Puzzle Game — PRD v1.0
+
+Overview
+This PRD defines a browser-based, mobile-first multiplayer photo puzzle game. Players
+take turns setting photo-based puzzles for each other and guessing each other’s
+puzzles, with one turn per day. The game is designed for small invite-based groups with
+open-ended play and cumulative scoring.
+
+Core Concept
+Each day constitutes one turn. Every player in a group simultaneously acts as a setter
+(creating one puzzle for the others) and a guesser (attempting to solve each other
+player’s puzzle). For a group of N players, there are N concurrent rounds running at any
+time.
+A setter uploads a personal photograph and provides metadata (What, Who, Where,
+When). They can optionally add visual and textual clues. Guessers see a limited view of
+the photo and attempt to identify the metadata. Correct answers lock in points; incorrect
+answers require the guesser to either reveal a clue (reducing available points) or
+concede.
+
+Key Properties
+•​
+•​
+•​
+•​
+•​
+
+Invite-based groups: Private games created and joined by invitation
+Asynchronous: Players set and guess independently within a 24-hour window
+Open-ended: No fixed end date; cumulative leaderboard
+Mobile-first: Designed primarily for mobile browsers with desktop support
+AI-augmented: LLM-powered clue generation and answer evaluation
+
+Page 2 of 22
+
+Photo Puzzle Game — PRD v1.0
+
+Gameplay Mechanics
+Setting a Puzzle
+The setter flow is a 6-step wizard:
+1.​ Upload Subject Photo: The setter selects a photo from their device. On mobile,
+this uses the native photo picker. On desktop, a standard file upload dialog. This
+is the core image of the puzzle.
+2.​ Define Sub-portions (optional): The setter can draw up to 3 rectangles on the
+subject photo. These create cropped views that are revealed progressively to the
+guesser. The first sub-portion is shown for free as the initial view.
+3.​ Upload Clue Photos (optional): Up to 3 additional photographs that serve as
+visual hints. These are separate images, not crops of the subject photo.
+4.​ Enter Metadata: The setter provides answers for four fields. If a field is not
+applicable (e.g. no people in the photo), the setter marks it as N/A. Fields marked
+N/A are excluded from the guessing round and scoring.
+5.​ Add Text Clues (optional): The setter can request AI-generated clues (the
+system produces 5, the setter picks 0–3) and/or manually write up to 3 clues.
+Total across AI-selected and manual cannot exceed 3.
+6.​ Review & Submit: The setter sees a summary including the total points
+available, all reveals, and the answers. They confirm and submit.
+Metadata Fields
+Field
+
+Description
+
+Matching Rules
+
+What
+
+What is it a photo of? (e.g.
+"Tower Bridge")
+
+Fuzzy LLM matching. Synonyms and
+reasonable descriptions accepted.
+
+Who
+
+Who is in the picture?
+Person or named animal.
+Mark N/A if nobody.
+
+Name matching including common
+nicknames (Jess/Jessica, Mike/Michael).
+
+Where
+
+Where was it taken? (e.g.
+"London")
+
+Geographic containment. "North London"
+matches "London". LLM evaluates
+equivalence.
+
+When
+
+When was it taken? Year
+only.
+
+Exact year match only.
+
+EXIF extraction: If the subject photo contains EXIF metadata, the system should
+attempt to pre-fill Where (GPS coordinates reverse-geocoded) and When (date taken).
+The setter can override or accept these values.
+
+Page 3 of 22
+
+Photo Puzzle Game — PRD v1.0
+
+AI Clue Generation
+When the setter taps the “Generate AI Clues” button, the system sends the subject
+photo to a vision-capable LLM with a prompt requesting 5 varied, progressively helpful
+clues. The clues should:
+•​ Avoid directly naming the subject, location, or people
+•​ Range from oblique hints to more direct ones
+•​ Reference visual, historical, cultural, or geographic attributes
+•​ Be phrased as single sentences
+The setter selects 0 to 3 of the 5 generated clues. They can also write their own, up to a
+combined total of 3 text clues.
+
+Guessing a Puzzle
+When a guesser opens a puzzle, they see the initial image:
+•​ If sub-portions exist: The first sub-portion is displayed, with the rest of the
+subject photo blurred out. This initial sub-portion is free (does not cost a reveal).
+•​ If no sub-portions: The full subject photo is displayed.
+The guesser enters answers for all non-N/A fields and submits. Each field is evaluated
+independently:
+•​ Correct: The field locks in immediately with points awarded at the current reveal
+level. It is shown as solved and cannot be changed.
+•​ Incorrect: The field remains unsolved. The guesser must choose to either reveal
+one additional piece of information (any type) or concede.
+One guess per field per reveal level. The guesser cannot re-submit answers for the
+same field at the same reveal level. After submitting, if any fields are wrong, they must
+reveal a clue or concede before guessing again.
+Reveal choice: When revealing, the guesser chooses the type (next sub-portion, a clue
+photo, or a text clue). The guesser picks which category but not which specific item;
+reveals are sequential within each type.
+Full photo: The full subject photo is only shown if the guesser concedes or runs out of
+reveals. It is never shown while the game is active (if sub-portions were provided).
+Concession
+The guesser can concede at any point. On concession:
+•​ Points for any previously correct fields are kept
+•​ Unsolved fields score 0
+•​ The full subject photo is revealed
+•​ All correct answers are shown
+
+Page 4 of 22
+
+Photo Puzzle Game — PRD v1.0
+
+Missed Turns
+If a guesser does not play by 06:00 the following day (configurable), they score 0 for
+that puzzle. The puzzle is then resolved and the setter receives maximum points for that
+guesser.
+
+Page 5 of 22
+
+Photo Puzzle Game — PRD v1.0
+
+Scoring System
+Points Pool Calculation
+The total points available for a puzzle are:
+
+Total Points = 25 + (Number of Reveals × 10)
+Where “Number of Reveals” is the sum of sub-portions + clue photos + text clues.
+Example Calculation
+Component
+
+Count
+
+Points Added
+
+Base
+
+—
+
+25
+
+Sub-portions
+
+2
+
+20
+
+Clue photos
+
+1
+
+10
+
+Text clues
+
+2
+
+20
+
+Total
+
+5 reveals
+
+75 points
+
+Guesser Scoring
+Points are divided equally across all non-N/A fields. With the example above and 3
+non-N/A fields, each field is worth 75 ÷ 3 = 25 points at the first guess level.
+Each reveal reduces the total by 10 points:
+•​ First guess (0 reveals used): 75 points total, 25 per field
+•​ After 1 reveal: 65 points total, ~21.7 per field
+•​ After 2 reveals: 55 points total, ~18.3 per field
+•​ After all 5 reveals: 25 points total, ~8.3 per field
+A field’s points are locked in at the level when the correct answer is submitted. Different
+fields can be scored at different reveal levels.
+
+Setter Scoring
+The setter earns the inverse of the guesser’s score:
+
+Page 6 of 22
+
+Photo Puzzle Game — PRD v1.0
+
+Setter Points = Total Points − Guesser Points
+This incentivises setters to both create difficult puzzles and provide generous clue
+material. A setter who provides many reveals (increasing the total pool) but whose
+puzzle remains unsolved earns maximum points. With multiple guessers, the setter
+earns separate scores against each guesser.
+Scoring Edge Cases
+Scenario
+
+Guesser Score
+
+Setter Score
+
+Perfect guess (all fields, first try)
+
+Total Points
+
+0
+
+Concession after some correct
+fields
+
+Sum of locked-in field
+points
+
+Total − Guesser
+
+Full concession (no correct
+fields)
+
+0
+
+Total Points
+
+Missed turn (no play by 06:00)
+
+0
+
+Total Points
+
+Cumulative Leaderboard
+All points (from both setting and guessing) accumulate over time. The leaderboard
+shows total points, with breakdowns by setting points and guessing points. There is no
+end condition; the game continues indefinitely.
+
+Page 7 of 22
+
+Photo Puzzle Game — PRD v1.0
+
+Answer Evaluation
+All answer evaluation is performed by an LLM to allow for fuzzy, natural-language
+matching. The system sends the setter’s answer and the guesser’s answer as a pair,
+along with the field type, and asks for a binary match/no-match decision.
+
+Matching Rules by Field
+What
+The broadest matching. Accept synonyms, reasonable descriptions, and alternate
+names. “Tower Bridge” should match “the bridge with two towers in London”. The LLM
+should evaluate semantic equivalence, not string similarity.
+Who
+Name matching with awareness of common nicknames, diminutives, and
+formal/informal variants. Examples:
+•​ Jess ↔ Jessica
+•​ Mike ↔ Michael
+•​ Dave ↔ David
+•​ Bob ↔ Robert
+•​ Full name match if only first name given or vice versa
+Where
+Geographic containment and equivalence. A more specific answer should match a more
+general one:
+•​ "North London" matches "London"
+•​ "Manhattan" matches "New York"
+•​ "Tuscany" matches "Italy"
+•​ But "Paris" does not match "France" (too vague — the LLM should use
+judgement)
+When
+Year only. Exact numeric match. The LLM should extract the year from both answers
+and compare. “2019” matches “2019”. “Last summer” does not match (must be a year).
+LLM Evaluation Prompt
+The evaluation prompt should be structured to return a deterministic result. Suggested
+approach:
+•​ System prompt establishing the role as a quiz answer evaluator
+•​ Include field type (What/Who/Where/When) and corresponding matching rules
+
+Page 8 of 22
+
+Photo Puzzle Game — PRD v1.0
+
+•​
+•​
+•​
+•​
+
+Provide setter’s answer and guesser’s answer
+Request a JSON response: { "match": true/false, "reasoning": "..." }
+Use low temperature (0.0–0.1) for consistency
+Cache identical evaluation pairs to avoid redundant API calls
+
+Page 9 of 22
+
+Photo Puzzle Game — PRD v1.0
+
+Design System
+The prototypes establish a dark, photo-centric aesthetic optimised for mobile. The
+design system should be implemented as reusable design tokens and components.
+
+Colour Palette
+Token
+
+Value
+
+Usage
+
+bg-primary
+
+#111827
+
+Page background
+
+bg-card
+
+#1F2937
+
+Card / input backgrounds
+
+bg-border
+
+#374151
+
+Borders, dividers
+
+text-primary
+
+#F5F5F4
+
+Primary text (headings, body)
+
+text-secondary
+
+#9CA3AF
+
+Secondary text, labels, hints
+
+text-muted
+
+#6B7280
+
+Muted text, timestamps
+
+accent-primary
+
+#F59E0B
+
+Primary accent (amber-400)
+
+accent-dark
+
+#D97706
+
+Darker accent for gradients (amber-600)
+
+accent-deep
+
+#92400E
+
+Deep accent for gradient endpoints
+(amber-800)
+
+success
+
+#10B981
+
+Correct answers, positive states
+
+success-bg
+
+#05966922
+
+Success backgrounds (translucent)
+
+error
+
+#EF4444
+
+Wrong answers, negative states
+
+error-bg
+
+#EF444422
+
+Error backgrounds (translucent)
+
+clue-sub
+
+#3B82F6
+
+Sub-portion indicator (blue)
+
+clue-photo
+
+#8B5CF6
+
+Clue photo indicator (purple)
+
+clue-text
+
+#F59E0B
+
+Text clue indicator (amber)
+
+Typography
+Element
+
+Font
+
+Size
+
+Weight
+
+Page title
+
+DM Sans
+
+20px
+
+800
+
+Section label
+
+JetBrains Mono
+
+12px
+
+400
+
+Body text
+
+DM Sans
+
+14–15px
+
+400–500
+
+Page 10 of 22
+
+Photo Puzzle Game — PRD v1.0
+
+Score display
+
+JetBrains Mono
+
+22px
+
+800
+
+Points notation
+
+JetBrains Mono
+
+12–13px
+
+700
+
+Button text
+
+DM Sans
+
+15px
+
+700
+
+Small labels
+
+DM Sans
+
+11–12px
+
+600
+
+Hint text
+
+DM Sans
+
+12–13px
+
+400
+
+Font loading: Import DM Sans (400, 500, 600, 700, 800) and JetBrains Mono (400,
+700) from Google Fonts.
+
+Spacing & Layout
+•​
+•​
+•​
+•​
+•​
+
+Max width: 480px, centred. All content constrained to mobile viewport.
+Page padding: 20px horizontal. 16px vertical for header.
+Card padding: 14–16px
+Component gaps: 8–12px between items, 16–20px between sections
+Border radius: 8px for small elements, 10–12px for cards and images
+
+Component Patterns
+Buttons
+•​ Primary: Linear gradient 135deg from #D97706 to #F59E0B. Black text, 700
+weight. Border-radius 12px, padding 14px.
+•​ Secondary: Background #1F2937, border 1px solid #374151. Light text
+#E5E7EB, 600 weight.
+•​ Disabled: Background #374151, text #6B7280, no pointer cursor.
+•​ Destructive: Background #EF4444, white text. Used for remove/delete actions.
+Inputs
+•​
+•​
+•​
+•​
+•​
+
+Background #1F2937, border 1px solid #374151
+Border radius 10px, padding 12px 14px
+Text colour #F5F5F4, font size 15px
+Focus state: border-color changes to #F59E0B
+Placeholder colour: inherits from text-secondary
+
+Status Cards
+•​ Correct field: Background #05966922, border 1px solid #05966944. Green text
+for label, lighter green for value, amber for points.
+•​ Wrong field: Background #EF444422, border 1px solid #EF444444. Red text.
+
+Page 11 of 22
+
+Photo Puzzle Game — PRD v1.0
+
+•​ Revealed clue: Background #F59E0B11, border 1px solid #F59E0B33. Warm
+yellow text #FDE68A.
+Fixed Bottom Navigation
+Sticky bottom bar with gradient fade from transparent to bg-primary. Max-width 480px,
+centred. Contains primary action button (right, flex: 2) and secondary action (left, flex:
+1). Padding 16px 20px.
+Fullscreen Image Viewer
+Overlay triggered by tapping any image. Features:
+•​ Fixed position, full viewport, background #000000EE, z-index 9999
+•​ Pinch-to-zoom on mobile, scroll-to-zoom on desktop
+•​ Drag to pan when zoomed (clamped to image bounds)
+•​ Double-tap to toggle between 1× and 2.5×
+•​ Close button: 40px circle, top-right, background #000000AA
+•​ Zoom indicator at bottom when scale > 1× (JetBrains Mono, #000000AA pill)
+Step Indicator (Setter)
+Horizontal step bar with numbered circles (28px, JetBrains Mono). Completed steps
+show tick and amber fill. Current step highlighted. Connected by 12px lines. Horizontally
+scrollable on small screens.
+
+Page 12 of 22
+
+Photo Puzzle Game — PRD v1.0
+
+Data Model
+The following entities are required. Field names are illustrative; use the conventions of
+your chosen ORM/database.
+SQLite notes: UUID fields are stored as TEXT. Enum fields are stored as TEXT with
+CHECK constraints. JSON fields are stored as TEXT and parsed in application code.
+Timestamps are stored as TEXT (ISO 8601) or INTEGER (Unix epoch).
+
+Group
+Field
+
+Type
+
+Notes
+
+id
+
+UUID
+
+Primary key
+
+name
+
+String
+
+Display name for the group
+
+created_at
+
+Timestamp
+
+invite_code
+
+String (unique)
+
+Used to join the group
+
+turn_deadline_hour
+
+Integer
+
+Hour (24h) when turn expires. Default
+6.
+
+Field
+
+Type
+
+Notes
+
+id
+
+UUID
+
+Primary key
+
+display_name
+
+String
+
+Shown to other players
+
+email
+
+String
+
+For auth
+
+avatar_url
+
+String (nullable)
+
+Profile image
+
+Field
+
+Type
+
+Notes
+
+group_id
+
+FK → Group
+
+user_id
+
+FK → User
+
+joined_at
+
+Timestamp
+
+total_score
+
+Integer
+
+User
+
+GroupMembership
+
+Cached cumulative score
+
+Puzzle
+
+Page 13 of 22
+
+Photo Puzzle Game — PRD v1.0
+
+Field
+
+Type
+
+Notes
+
+id
+
+UUID
+
+Primary key
+
+group_id
+
+FK → Group
+
+setter_id
+
+FK → User
+
+turn_date
+
+Date
+
+Which day this puzzle belongs to
+
+subject_photo_url
+
+String
+
+Stored image path (relative to
+uploads/)
+
+sub_portions
+
+TEXT (JSON)
+
+Array of {x, y, w, h} as percentages
+(stored as JSON string)
+
+clue_photo_urls
+
+TEXT (JSON)
+
+Array of stored image paths
+(stored as JSON string)
+
+answer_what
+
+String (nullable)
+
+Null if N/A
+
+answer_who
+
+String (nullable)
+
+Null if N/A
+
+answer_where
+
+String (nullable)
+
+Null if N/A
+
+answer_when
+
+String (nullable)
+
+Null if N/A (year as string)
+
+text_clues
+
+TEXT (JSON)
+
+Array of clue strings (stored as
+JSON string)
+
+total_points
+
+Integer
+
+Calculated: 25 + reveals × 10
+
+created_at
+
+Timestamp
+
+GuessSession
+Field
+
+Type
+
+Notes
+
+id
+
+UUID
+
+Primary key
+
+puzzle_id
+
+FK → Puzzle
+
+guesser_id
+
+FK → User
+
+status
+
+Enum
+
+active | completed | conceded |
+expired
+
+reveals_used
+
+Integer
+
+Count of reveals consumed
+
+reveal_history
+
+TEXT (JSON)
+
+Ordered array of reveal types chosen
+(stored as JSON string)
+
+score
+
+Integer
+
+Guesser’s final score
+
+setter_score
+
+Integer
+
+Total − guesser score
+
+completed_at
+
+Timestamp
+(nullable)
+
+Page 14 of 22
+
+Photo Puzzle Game — PRD v1.0
+
+Guess
+Field
+
+Type
+
+Notes
+
+id
+
+UUID
+
+Primary key
+
+session_id
+
+FK →
+GuessSession
+
+field
+
+Enum
+
+what | who | where | when
+
+value
+
+String
+
+The guesser’s answer
+
+reveal_level
+
+Integer
+
+How many reveals had been used
+
+is_correct
+
+Boolean
+
+Result of LLM evaluation
+
+points_awarded
+
+Integer
+
+0 if incorrect
+
+created_at
+
+Timestamp
+
+Page 15 of 22
+
+Photo Puzzle Game — PRD v1.0
+
+Technical Architecture
+Recommended Stack
+Layer
+
+Technology
+
+Rationale
+
+Frontend
+
+Next.js (App Router) +
+React
+
+SSR for initial load, client-side
+interactivity for game UI
+
+Styling
+
+Tailwind CSS
+
+Utility-first matches the token-based
+design system
+
+Database
+
+SQLite (via better-sqlite3
+or Drizzle ORM)
+
+Lightweight embedded database,
+zero infrastructure, single-file
+deployment
+
+Image Storage
+
+Local filesystem
+(public/uploads/)
+
+Images served as static files by
+Next.js; Sharp for
+transformations
+
+Auth
+
+NextAuth.js
+
+Magic link or social login;
+session-based auth with JWT
+tokens
+
+LLM (evaluation)
+
+Anthropic Claude API
+
+Answer matching, temperature
+0.0–0.1
+
+LLM (clue gen)
+
+Anthropic Claude API
+(vision)
+
+Clue generation from subject photo
+
+Background Jobs
+
+node-cron or Next.js
+cron API routes
+
+Turn expiry, score rollup
+
+Hosting
+
+Vercel
+
+Pairs naturally with Next.js
+
+API Endpoints
+Key endpoints (RESTful or tRPC):
+Metho
+d
+
+Path
+
+Description
+
+POST
+
+/api/groups
+
+Create a new group
+
+POST
+
+/api/groups/:id/join
+
+Join via invite code
+
+POST
+
+/api/puzzles
+
+Submit a puzzle (multipart: images +
+metadata)
+
+GET
+
+/api/puzzles/:id/play
+
+Get puzzle for guessing (respects reveal
+state)
+
+POST
+
+/api/puzzles/:id/guess
+
+Submit guesses for current reveal level
+
+Page 16 of 22
+
+Photo Puzzle Game — PRD v1.0
+
+POST
+
+/api/puzzles/:id/reveal
+
+Consume a reveal (specify type)
+
+POST
+
+/api/puzzles/:id/concede
+
+Concede the puzzle
+
+POST
+
+/api/puzzles/:id/generate-clues
+
+Generate AI clues from subject photo
+
+GET
+
+/api/groups/:id/leaderboard
+
+Cumulative scores
+
+GET
+
+/api/groups/:id/activity
+
+Setter view of guesser activity
+
+Image Handling
+•​ Upload: Subject photos and clue photos saved to the local filesystem under
+a structured uploads/ directory (e.g. uploads/{groupId}/{puzzleId}/). Strip
+EXIF on upload (except GPS and date for pre-fill) for privacy.
+•​ Sub-portions: Stored as percentage-based coordinates. The frontend renders
+the crop at display time. No server-side image processing required.
+•​ Transformation: Use Sharp (Node.js) for server-side thumbnail generation
+and WebP conversion on upload.
+•​ Size limits: Max 10MB per image. Resize on upload to max 2000px on longest
+edge.
+•​ Serving: Images served as static files via Next.js public directory or a
+dedicated /api/images/:path route with appropriate cache headers.
+
+Real-time Updates
+Server-Sent Events (SSE) via Next.js API routes for:
+•​ Notifying setter when a guesser submits/reveals/concedes
+•​ Updating leaderboard in real-time
+•​ Alerting users when a new puzzle is available
+Alternatively, short-polling (every 10–30 seconds) can be used as a simpler
+fallback if SSE adds too much complexity for V1.
+
+Background Jobs
+•​ Turn expiry: Scheduled via node-cron (or a Next.js cron API route on
+Vercel) to run daily at the configured deadline hour. Mark all active
+GuessSessions as "expired" with score 0. Award full points to setters.
+•​ Score rollup: After each puzzle completion, update
+GroupMembership.total_score via application-level logic in the API route.
+
+Page 17 of 22
+
+Photo Puzzle Game — PRD v1.0
+
+Non-Functional Requirements
+Performance
+Metric
+
+Target
+
+Initial page load (LCP)
+
+< 2.5 seconds on 4G mobile
+
+Image display (after tap)
+
+< 500ms with lazy loading
+
+Guess submission round-trip
+
+< 2 seconds (including LLM evaluation)
+
+AI clue generation
+
+< 10 seconds (with loading indicator)
+
+Fullscreen image open
+
+< 100ms (no network, pure UI)
+
+Scalability
+•​
+•​
+•​
+•​
+
+Initial target: 100 groups, 2–6 players per group
+LLM API calls should be queued if rate-limited, not dropped
+Image storage scales independently via local filesystem (consider S3
+or equivalent if disk space becomes a constraint)
+Database should handle 10,000 puzzles without performance degradation
+
+Security
+•​ Authentication: All API endpoints require authenticated user
+•​ Authorisation: Application-level middleware enforces access control. Users
+can only access puzzles in their groups. Guessers cannot see answers or other
+guessers' activity. Setters can see all guesser activity for their puzzles.
+•​ Image privacy: Images served through authenticated API routes that verify
+group membership. EXIF GPS data stripped after extraction.
+•​ Answer security: Answers are never sent to the guesser’s client. All evaluation
+happens server-side via LLM.
+•​ Input validation: All user inputs sanitised. Image type and size validated
+server-side.
+
+Accessibility
+•​ All interactive elements keyboard-navigable
+•​ ARIA labels on image viewers, buttons, and form fields
+•​ Minimum contrast ratio 4.5:1 for body text (the dark theme with amber accents
+meets this)
+•​ Touch targets minimum 44px × 44px on mobile
+•​ Screen reader announcements for score changes and answer results
+
+Page 18 of 22
+
+Photo Puzzle Game — PRD v1.0
+
+Browser Support
+•​
+•​
+•​
+•​
+
+Safari iOS 15+ (primary target)
+Chrome Android 90+
+Chrome/Edge/Firefox desktop (latest 2 versions)
+Progressive enhancement: core functionality without JavaScript for initial render
+
+Offline / Poor Connectivity
+•​
+•​
+•​
+•​
+
+Images lazy-loaded with blur-up placeholders
+Optimistic UI for guess submission (show pending state, reconcile on response)
+Graceful error handling if LLM evaluation fails (retry with backoff, queue for later)
+Service worker for caching static assets (future enhancement)
+
+Observability
+•​
+•​
+•​
+•​
+
+Structured logging for all API endpoints
+LLM evaluation results logged (for tuning matching quality)
+Error tracking (Sentry or equivalent)
+Basic analytics: puzzles set/day, guesses/day, average score, completion rate
+
+Data Retention
+•​ Images retained as long as the group is active
+•​ Puzzle and guess data retained indefinitely for leaderboard integrity
+•​ Users can delete their account; their puzzles become anonymous but remain in
+the game
+
+Page 19 of 22
+
+Photo Puzzle Game — PRD v1.0
+
+UX Flows
+First-Time User
+1.​ Land on home screen (not logged in)
+2.​ Sign up / log in (magic link or social via NextAuth.js)
+3.​ See empty dashboard with “Create Group” or “Join Group”
+4.​ Create group → get invite link to share
+5.​ Or: tap invite link → join group → see dashboard
+
+Daily Loop (Setter)
+1.​ Open app → dashboard shows “Set today’s puzzle” prompt
+2.​ Tap → enter 6-step setter wizard
+3.​ Upload photo → optionally add sub-portions → optionally add clue photos
+4.​ Enter What/Who/Where/When (or N/A)
+5.​ Optionally generate/write clues
+6.​ Review and submit
+7.​ Return to dashboard → see pending guessers
+
+Daily Loop (Guesser)
+1.​ Open app → dashboard shows puzzles to solve
+2.​ Tap a puzzle → see initial image
+3.​ Enter guesses for all fields → submit
+4.​ See results: correct fields lock in (green), wrong fields shown (red)
+5.​ Choose: reveal a clue (pick type) or concede
+6.​ If reveal: see new info, guess again
+7.​ Repeat until all correct, conceded, or out of clues
+8.​ See final score and setter’s score
+
+Setter Activity View
+After submitting a puzzle, the setter can monitor guesser activity:
+•​ Which guessers have started, are in progress, or have finished
+•​ For each guesser: their guess history per field, which reveals they chose, their
+final score
+•​ The setter’s points earned from each guesser
+•​ This view updates in real-time via SSE or polling
+
+Page 20 of 22
+
+Photo Puzzle Game — PRD v1.0
+
+Future Considerations
+The following are explicitly out of scope for V1 but should be considered in the
+architecture:
+•​ Push notifications: Remind players to set/guess before deadline. Architecture
+should support adding web push or native notifications later.
+•​ Streaks: Track consecutive days of play. Display on profile/leaderboard.
+•​ Photo moderation: Automated NSFW detection on uploaded images. Flag for
+review.
+•​ Puzzle archive: Browse past puzzles and their solutions. “Replay” mode for new
+group members.
+•​ Group settings: Configurable deadline hour, timezone, weekend skips.
+•​ Multi-language: LLM evaluation already handles this implicitly; UI localisation
+would need separate work.
+•​ Native apps: If the PWA approach has limitations (camera access, push),
+consider React Native or Capacitor wrappers.
+
+Page 21 of 22
+
+Photo Puzzle Game — PRD v1.0
+
+Appendix: Reveal Ordering Logic
+When the guesser chooses to reveal information, they select a category. Reveals within
+each category are sequential:
+Category
+
+Reveal Order
+
+Visual Treatment
+
+Sub-portions
+
+In order drawn by setter (1,
+2, 3)
+
+Blurred photo with sharp cropped
+area. Border colour #3B82F6.
+
+Clue photos
+
+In order uploaded by setter
+(1, 2, 3)
+
+Thumbnail strip below main image.
+Border colour #8B5CF6.
+
+Text clues
+
+In order selected/written by
+setter (1, 2, 3)
+
+Pill card below images. Background
+#F59E0B11, amber text.
+
+The guesser sees available reveal types grouped by category with counts (e.g.
+“Sub-portion (2 available)”). They choose the category; the next item in that category is
+revealed. They can mix categories freely.
+Important: The initial image (first sub-portion or full photo) is always free and not
+counted as a reveal. The reveal count only includes additional pieces of information
+beyond the initial view.
+
+Page 22 of 22
+
+
