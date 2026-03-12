@@ -1,0 +1,10 @@
+{
+  "type": "rig",
+  "version": 1,
+  "name": "img2",
+  "git_url": "https://github.com/dadamsuk/img2.git",
+  "created_at": "2026-03-12T20:19:47.260575276Z",
+  "beads": {
+    "prefix": "im"
+  }
+}
