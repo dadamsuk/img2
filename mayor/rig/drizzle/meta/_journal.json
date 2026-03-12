@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1773349846788,
+      "tag": "0000_lush_kitty_pryde",
+      "breakpoints": true
+    }
+  ]
+}
